@@ -1,0 +1,164 @@
+"use client";
+
+import { useRef, useState } from "react";
+import ItemThumb from "@/components/ItemThumb";
+import Empty from "@/components/Empty";
+import { compressImage } from "@/lib/image";
+import { newId, useItems, useProfile } from "@/lib/store";
+import { CATEGORIES, type Category, type Item } from "@/lib/types";
+
+type Pending = { key: string; photo: string; status: "analyse" | "erreur"; error?: string };
+
+export default function DressingPage() {
+  const [items, setItems, ready] = useItems();
+  const [profile] = useProfile();
+  const [filter, setFilter] = useState<Category | "tout">("tout");
+  const [pending, setPending] = useState<Pending[]>([]);
+  const [editing, setEditing] = useState<Item | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+
+  async function addPhotos(files: FileList | null) {
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      const key = newId();
+      const photo = await compressImage(file);
+      setPending((p) => [...p, { key, photo, status: "analyse" }]);
+      try {
+        const r = await fetch("/api/analyze-item", { method: "POST", body: JSON.stringify({ photo }) });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error);
+        const item: Item = { ...data, id: newId(), photo, wornCount: 0, createdAt: new Date().toISOString() };
+        setItems((xs) => [item, ...xs]);
+        setPending((p) => p.filter((x) => x.key !== key));
+      } catch (e) {
+        setPending((p) => p.map((x) => (x.key === key ? { ...x, status: "erreur", error: String((e as Error).message) } : x)));
+      }
+    }
+    if (input.current) input.current.value = "";
+  }
+
+  if (!ready) return null;
+  if (!profile)
+    return <Empty title="Commence par ton profil" text="Quelques infos sur toi pour que les conseils soient vraiment personnalisés." href="/profil" cta="Créer mon profil" />;
+
+  const shown = filter === "tout" ? items : items.filter((i) => i.category === filter);
+  const counts = Object.fromEntries(CATEGORIES.map((c) => [c, items.filter((i) => i.category === c).length]));
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl">Mon dressing</h1>
+          <p className="text-sm text-muted">{items.length} pièce{items.length > 1 ? "s" : ""} numérisée{items.length > 1 ? "s" : ""}. Photographie chaque pièce à plat ou sur cintre, en lumière naturelle.</p>
+        </div>
+        <button className="btn" onClick={() => input.current?.click()}>+ Ajouter des pièces</button>
+        <input ref={input} type="file" accept="image/*" multiple capture="environment" hidden onChange={(e) => addPhotos(e.target.files)} />
+      </div>
+
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <button className={`chip shrink-0 ${filter === "tout" ? "chip-on" : ""}`} onClick={() => setFilter("tout")}>Tout · {items.length}</button>
+        {CATEGORIES.map((c) => (
+          <button key={c} className={`chip shrink-0 capitalize ${filter === c ? "chip-on" : ""}`} onClick={() => setFilter(c)}>
+            {c} · {counts[c]}
+          </button>
+        ))}
+      </div>
+
+      {items.length === 0 && pending.length === 0 && (
+        <div className="card py-12 text-center">
+          <p className="font-serif text-xl">Ton dressing est vide</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
+            Ajoute tes pièces en photo : l&apos;IA reconnaît le type, les couleurs exactes, la matière, la coupe et le niveau de formalité.
+            Commence par 10 essentiels (hauts, bas, chaussures, une veste).
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+        {pending.map((p) => (
+          <div key={p.key} className="space-y-1.5">
+            <div className="relative aspect-square overflow-hidden rounded-xl border border-line">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.photo} alt="" className="h-full w-full object-cover opacity-50" />
+              <span className="absolute inset-0 grid place-items-center text-xs font-medium">
+                {p.status === "analyse" ? "Analyse IA…" : "Erreur"}
+              </span>
+            </div>
+            {p.status === "erreur" && (
+              <p className="text-xs text-accent">
+                {p.error}{" "}
+                <button className="underline" onClick={() => setPending((x) => x.filter((y) => y.key !== p.key))}>retirer</button>
+              </p>
+            )}
+          </div>
+        ))}
+        {shown.map((i) => (
+          <button key={i.id} className="space-y-1.5 text-left" onClick={() => setEditing(i)}>
+            <ItemThumb item={i} />
+            <p className="line-clamp-1 text-sm font-medium">{i.name}</p>
+            <p className="text-xs text-muted">{i.colors.map((c) => c.name).join(" · ")} {i.wornCount ? `· porté ${i.wornCount}×` : ""}</p>
+          </button>
+        ))}
+      </div>
+
+      {editing && (
+        <EditItem
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSave={(it) => { setItems((xs) => xs.map((x) => (x.id === it.id ? it : x))); setEditing(null); }}
+          onDelete={() => { setItems((xs) => xs.filter((x) => x.id !== editing.id)); setEditing(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditItem({ item, onClose, onSave, onDelete }: { item: Item; onClose: () => void; onSave: (i: Item) => void; onDelete: () => void }) {
+  const [it, setIt] = useState(item);
+  return (
+    <div className="fixed inset-0 z-30 grid place-items-end bg-ink/40 sm:place-items-center" onClick={onClose}>
+      <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl bg-card p-5 sm:max-w-md sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-4">
+          <div className="w-28 shrink-0"><ItemThumb item={it} /></div>
+          <div className="flex-1 space-y-2">
+            <input className="input" value={it.name} onChange={(e) => setIt({ ...it, name: e.target.value })} />
+            <select className="input capitalize" value={it.category} onChange={(e) => setIt({ ...it, category: e.target.value as Category })}>
+              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 space-y-3 text-sm">
+          <div>
+            <span className="label">Couleurs</span>
+            <div className="flex flex-wrap gap-3">
+              {it.colors.map((c, idx) => (
+                <label key={idx} className="flex items-center gap-2">
+                  <input type="color" value={c.hex} className="h-8 w-8 cursor-pointer rounded-full"
+                    onChange={(e) => setIt({ ...it, colors: it.colors.map((x, j) => (j === idx ? { ...x, hex: e.target.value } : x)) })} />
+                  <input className="input w-28 py-1" value={c.name}
+                    onChange={(e) => setIt({ ...it, colors: it.colors.map((x, j) => (j === idx ? { ...x, name: e.target.value } : x)) })} />
+                </label>
+              ))}
+            </div>
+          </div>
+          <dl className="grid grid-cols-2 gap-2 text-xs">
+            <div><dt className="text-muted">Type</dt><dd>{it.subtype}</dd></div>
+            <div><dt className="text-muted">Coupe</dt><dd>{it.fit}</dd></div>
+            <div><dt className="text-muted">Matière</dt><dd>{it.material}</dd></div>
+            <div><dt className="text-muted">Motif</dt><dd>{it.pattern}</dd></div>
+            <div><dt className="text-muted">Formalité</dt><dd>{"●".repeat(it.formality)}{"○".repeat(5 - it.formality)}</dd></div>
+            <div><dt className="text-muted">Chaleur</dt><dd>{"●".repeat(it.warmth)}{"○".repeat(5 - it.warmth)}</dd></div>
+            <div className="col-span-2"><dt className="text-muted">Saisons · style</dt><dd>{it.seasons.join(", ")} · {it.styleTags.join(", ")}</dd></div>
+          </dl>
+        </div>
+        <div className="mt-5 flex justify-between">
+          <button className="text-sm text-accent underline" onClick={() => confirm("Supprimer cette pièce ?") && onDelete()}>Supprimer</button>
+          <div className="flex gap-2">
+            <button className="btn-ghost" onClick={onClose}>Annuler</button>
+            <button className="btn" onClick={() => onSave(it)}>Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

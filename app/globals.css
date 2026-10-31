@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f3f0ea;
+  --color-card: #fbfaf7;
+  --color-ink: #1b1a17;
+  --color-muted: #6f6a61;
+  --color-line: #e2ddd3;
+  --color-accent: #7a1f2e;
+  --color-accent-soft: #f1e3e3;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: var(--font-serif); letter-spacing: -0.01em; }
+
+@layer components {
+  .card { @apply rounded-2xl border border-line bg-card p-5; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-card transition hover:opacity-90 disabled:opacity-40; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-full border border-line bg-card px-4 py-2 text-sm transition hover:border-ink; }
+  .chip { @apply rounded-full border border-line bg-card px-3 py-1.5 text-sm transition hover:border-ink; }
+  .chip-on { @apply border-ink bg-ink text-card; }
+  .label { @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted; }
+  .input { @apply w-full rounded-xl border border-line bg-card px-3 py-2.5 text-sm outline-none focus:border-ink; }
+}
