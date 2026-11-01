@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useProfile } from "@/lib/store";
 
-type Trends = { text: string; sources: { url: string; title: string }[] };
+type Trends = { text: string; sources: { url: string; title: string }[]; grounded: boolean };
 
 // Synthèse de la recherche initiale (oct. 2026), recoupée sur plusieurs sources — voir docs/CONCEPT.md.
 const BASELINE = [
@@ -58,7 +58,12 @@ export default function TendancesPage() {
         {error && <p className="text-sm text-accent">{error}</p>}
         {data && (
           <>
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">{data.text.replace(/\*\*/g, "")}</div>
+            {!data.grounded && (
+              <p className="rounded-lg bg-accent-soft/60 p-2 text-xs">
+                Recherche web indisponible avec la clé API actuelle : synthèse basée sur les connaissances du modèle (sans sources en direct).
+              </p>
+            )}
+            <div className="whitespace-pre-wrap text-sm leading-relaxed">{data.text.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^\s*\* /gm, "• ")}</div>
             {data.sources.length > 0 && (
               <div>
                 <span className="label">Sources</span>

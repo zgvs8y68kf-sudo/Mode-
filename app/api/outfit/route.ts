@@ -1,4 +1,4 @@
-import { currentTrends, generateJSON } from "@/lib/gemini";
+import { cachedTrends, generateJSON } from "@/lib/gemini";
 import { outfitsSchema } from "@/lib/schemas";
 import { describeProfile } from "@/lib/describe";
 import { jsonError, readBody } from "@/lib/api";
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       recent?: WornEntry[];
     }>(req);
 
-    const trends = await currentTrends(profile.sex).catch(() => null);
+    const trends = cachedTrends(profile.sex);
     const result = await generateJSON({
       schema: outfitsSchema,
       prompt: `Propose 3 tenues COMPLÈTES et différentes pour aujourd'hui (${new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}).

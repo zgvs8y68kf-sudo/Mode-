@@ -1,4 +1,4 @@
-import { currentTrends, generateJSON, parseDataUrl } from "@/lib/gemini";
+import { cachedTrends, generateJSON, parseDataUrl } from "@/lib/gemini";
 import { auditSchema } from "@/lib/schemas";
 import { describeProfile } from "@/lib/describe";
 import { jsonError, readBody } from "@/lib/api";
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       wardrobe: unknown[];
       selfie?: string;
     }>(req);
-    const trends = await currentTrends(profile.sex).catch(() => null);
+    const trends = cachedTrends(profile.sex);
     const result = await generateJSON({
       schema: auditSchema,
       images: selfie ? [parseDataUrl(selfie)] : undefined,

@@ -1,16 +1,23 @@
 import "server-only";
-import { GoogleGenAI, type Part } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel, type Part } from "@google/genai";
 
 // Toute l'intelligence « style » passe par Gemini : pas de règles figées dans le code.
 // Le modèle par défaut est l'alias "gemini-flash-latest" (mis à jour par Google).
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+// Modèle de secours si le principal est saturé (503) ou hors quota (429).
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-flash-lite-latest";
 
 let client: GoogleGenAI | null = null;
 function ai() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY manquante (Vercel > Settings > Environment Variables).");
-  client ??= new GoogleGenAI({ apiKey });
+  client ??= new GoogleGenAI({
+    apiKey,
+    // Peu de retries et délai court : on préfère basculer vite sur le modèle de secours
+    // (les fonctions Vercel sont limitées à 60 s).
+    httpOptions: { retryOptions: { attempts: 1 } },
+  });
   return client;
 }
 
@@ -29,6 +36,32 @@ Principes de base (consensus de plusieurs sources mode) :
 - Reste actuel·le (saison en cours), mais préfère des pièces durables aux micro-tendances.
 - Ne jamais inventer d'URL de produit ni de référence exacte : décris la pièce et propose une requête de recherche.`;
 
+type GenParams = Parameters<GoogleGenAI["models"]["generateContent"]>[0];
+
+/** Appelle le modèle principal, puis le modèle de secours en cas de saturation / quota / délai. */
+// Les fonctions Vercel sont limitées à 60 s : le principal a 20 s, puis bascule sur le secours.
+async function generate(params: Omit<GenParams, "model">) {
+  const config = {
+    ...params.config,
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+  };
+  try {
+    return await ai().models.generateContent({
+      ...params,
+      model: MODEL,
+      config: { ...config, abortSignal: AbortSignal.timeout(20_000) },
+    });
+  } catch (e) {
+    if (FALLBACK_MODEL === MODEL) throw e;
+    console.warn(`${MODEL} indisponible (${String((e as Error).message).slice(0, 80)}), bascule sur ${FALLBACK_MODEL}`);
+    return ai().models.generateContent({
+      ...params,
+      model: FALLBACK_MODEL,
+      config: { ...config, abortSignal: AbortSignal.timeout(30_000) },
+    });
+  }
+}
+
 export async function generateJSON<T>(opts: {
   prompt: string;
   schema: object;
@@ -39,8 +72,7 @@ export async function generateJSON<T>(opts: {
     ...(opts.images ?? []).map((i) => ({ inlineData: { mimeType: i.mimeType, data: i.data } })),
     { text: opts.prompt },
   ];
-  const res = await ai().models.generateContent({
-    model: MODEL,
+  const res = await generate({
     contents: [{ role: "user", parts }],
     config: {
       systemInstruction: STYLIST_SYSTEM,
@@ -55,9 +87,11 @@ export async function generateJSON<T>(opts: {
 }
 
 /** Recherche web en direct (Google Search grounding) pour rester à jour sur les tendances. */
+let groundingOffUntil = 0;
+
 export async function groundedSearch(prompt: string) {
-  const res = await ai().models.generateContent({
-    model: MODEL,
+  if (Date.now() < groundingOffUntil) throw new Error("Recherche web en pause (quota)");
+  const res = await generate({
     contents: prompt,
     config: { systemInstruction: STYLIST_SYSTEM, tools: [{ googleSearch: {} }], temperature: 0.3 },
   });
@@ -67,7 +101,16 @@ export async function groundedSearch(prompt: string) {
     .filter((w): w is { uri: string; title?: string } => !!w?.uri)
     .map((w) => ({ url: w.uri, title: w.title ?? w.uri }));
   const unique = [...new Map(sources.map((s) => [s.url, s])).values()];
-  return { text: res.text ?? "", sources: unique };
+  return { text: res.text ?? "", sources: unique, grounded: true };
+}
+
+/** Repli si la recherche web n'est pas disponible (quota, offre gratuite…) : connaissances du modèle. */
+async function plainAnswer(prompt: string) {
+  const res = await generate({
+    contents: prompt,
+    config: { systemInstruction: STYLIST_SYSTEM, temperature: 0.3 },
+  });
+  return { text: res.text ?? "", sources: [] as { url: string; title: string }[], grounded: false };
 }
 
 // Cache mémoire (par instance serverless) des tendances du jour.
@@ -78,15 +121,28 @@ export async function currentTrends(sex: string) {
   const hit = trendCache.get(key);
   if (hit) return hit.value;
   const today = new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const value = await groundedSearch(
+  const prompt =
     `Nous sommes en ${today}. Résume les tendances mode ${sex === "homme" ? "homme" : sex === "femme" ? "femme" : "mixtes"} ` +
       `ACTUELLES pour la saison en cours, en ne retenant que ce qui est cité par plusieurs médias reconnus ` +
       `(Vogue, GQ, Elle, Harper's Bazaar, Business of Fashion, Numéro, FashionUnited…). ` +
       `Donne : 1) silhouettes et coupes, 2) pièces clés, 3) couleurs de la saison, 4) matières/motifs, ` +
-      `5) ce qui est en perte de vitesse. Format : listes courtes en français, faciles à appliquer au quotidien.`,
-  );
-  trendCache.set(key, { at: Date.now(), value });
-  return value;
+      `5) ce qui est en perte de vitesse. Format : listes courtes en français, faciles à appliquer au quotidien.`;
+  try {
+    const value = await groundedSearch(prompt);
+    trendCache.set(key, { at: Date.now(), value });
+    return value;
+  } catch (e) {
+    if (/429|RESOURCE_EXHAUSTED|quota/i.test(String((e as Error).message))) groundingOffUntil = Date.now() + 3_600_000;
+    console.warn("Recherche web indisponible, repli sur le modèle :", (e as Error).message.slice(0, 120));
+    const value = await plainAnswer(prompt);
+    trendCache.set(key, { at: Date.now(), value });
+    return value;
+  }
+}
+
+/** Tendances déjà en cache (sans appel réseau) : utilisées par les tenues pour rester rapides. */
+export function cachedTrends(sex: string) {
+  return trendCache.get(`${sex}-${new Date().toISOString().slice(0, 10)}`)?.value ?? null;
 }
 
 export function parseDataUrl(dataUrl: string) {
