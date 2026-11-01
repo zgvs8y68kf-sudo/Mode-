@@ -65,7 +65,7 @@ Points de désaccord, gardés avec prudence : le **violet royal** (Who What Wear
 
 - **Zara, Uniqlo, H&M, Levi's : aucune API catalogue publique.** Le scraping est contraire à leurs CGU et fragile. On ne l'utilise pas.
 - **Zalando** : l'API *Partner Program / zDirect* est réservée aux **vendeurs**, pas à la lecture du catalogue.
-- **MVP** : l'IA décrit la pièce manquante (type, couleur #hex, matière, pourquoi) et l'app génère des **liens de recherche pré-remplis** par enseigne (`lib/shops.ts`). L'IA n'invente jamais d'URL produit.
+- **MVP** : l'IA décrit la pièce manquante (type, couleur #hex, matière, pourquoi) et l'app génère des **liens de recherche pré-remplis** vers 130 enseignes (`lib/shops.ts`) : recherche interne de l'enseigne quand son format est connu, sinon recherche Google limitée au site de l'enseigne. L'IA choisit ses suggestions dans cette liste selon le budget et les préférences. L'IA n'invente jamais d'URL produit.
 - **V2, la voie propre** : les **flux produits affiliés** (Awin, Effiliation, Kelkoo, ShopStyle Collective, flux Zalando via Awin). On obtient de vraies fiches (image, prix, lien) **et une rémunération par commission**. On importe le flux, on vectorise les fiches (embeddings image + texte) et on fait du *matching* avec la pièce manquante décrite par l'IA.
 
 ## 6. Feuille de route
