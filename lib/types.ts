@@ -77,6 +77,11 @@ export interface Item {
   seasons: string[];
   styleTags: string[];
   brand?: string;
+  size?: string;
+  price?: number; // prix d'achat en €
+  purchaseDate?: string; // AAAA-MM-JJ
+  store?: string;
+  source?: "photo" | "ticket";
   wornCount: number;
   lastWorn?: string;
   createdAt: string;

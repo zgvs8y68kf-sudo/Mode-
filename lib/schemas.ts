@@ -121,3 +121,33 @@ export const bodyProfileSchema = {
   },
   required: ["usable", "reason", "sex", "ageEstimate", "morphology", "proportions", "legsVsTorso", "skinHex", "undertone", "hairLabel", "hairHex", "eyeColor", "contrast", "colorSeason", "tips"],
 };
+
+/** Lecture d'un ticket de caisse / facture / e-mail de commande. */
+export const receiptSchema = {
+  type: "object",
+  properties: {
+    isReceipt: { type: "boolean", description: "false si l'image n'est pas un ticket, une facture ou une confirmation de commande" },
+    store: { type: "string", description: "Enseigne, ex. 'Zara', 'Uniqlo'" },
+    date: { type: "string", description: "Date d'achat AAAA-MM-JJ, chaîne vide si illisible" },
+    currency: { type: "string" },
+    items: {
+      type: "array",
+      description: "UNIQUEMENT vêtements, chaussures, sacs et accessoires de mode. Ignorer sacs de caisse, cartes cadeaux, remises, frais, cosmétiques, maison.",
+      items: {
+        type: "object",
+        properties: {
+          rawLabel: { type: "string", description: "Libellé exact lu sur le ticket" },
+          reference: { type: "string", description: "Référence / code article si présent" },
+          quantity: { type: "integer", minimum: 1 },
+          price: { type: "number", description: "Prix unitaire payé (après remise de ligne si indiquée)" },
+          size: { type: "string" },
+          ...itemSchema.properties,
+          colorConfidence: { type: "string", enum: ["lue", "déduite", "inconnue"], description: "lue = couleur écrite sur le ticket ; déduite = devinée (référence, connaissance du produit) ; inconnue = couleur par défaut" },
+        },
+        required: ["rawLabel", "quantity", "price", "size", "colorConfidence", ...itemSchema.required],
+      },
+    },
+    note: { type: "string", description: "Remarque utile (lignes illisibles, articles ignorés…), sinon chaîne vide" },
+  },
+  required: ["isReceipt", "store", "date", "currency", "items", "note"],
+};

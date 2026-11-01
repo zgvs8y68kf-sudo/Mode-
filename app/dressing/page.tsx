@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
+import ReceiptScan from "@/components/ReceiptScan";
 import Empty from "@/components/Empty";
 import { compressImage } from "@/lib/image";
 import { apiFetch } from "@/lib/apiFetch";
@@ -16,6 +17,7 @@ export default function DressingPage() {
   const [filter, setFilter] = useState<Category | "tout">("tout");
   const [pending, setPending] = useState<Pending[]>([]);
   const [editing, setEditing] = useState<Item | null>(null);
+  const [scanning, setScanning] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
   async function addPhotos(files: FileList | null) {
@@ -50,7 +52,10 @@ export default function DressingPage() {
           <h1 className="text-3xl">Mon dressing</h1>
           <p className="text-sm text-muted">{items.length} pièce{items.length > 1 ? "s" : ""} numérisée{items.length > 1 ? "s" : ""}. Photographie chaque pièce à plat ou sur cintre, en lumière naturelle.</p>
         </div>
-        <button className="btn" onClick={() => input.current?.click()}>+ Ajouter des pièces</button>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-ghost" onClick={() => setScanning(true)}>🧾 Scanner un ticket</button>
+          <button className="btn" onClick={() => input.current?.click()}>+ Ajouter des pièces</button>
+        </div>
         <input ref={input} type="file" accept="image/*" multiple capture="environment" hidden onChange={(e) => addPhotos(e.target.files)} />
       </div>
 
@@ -67,7 +72,7 @@ export default function DressingPage() {
         <div className="card py-12 text-center">
           <p className="font-serif text-xl">Ton dressing est vide</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
-            Ajoute tes pièces en photo : l&apos;IA reconnaît le type, les couleurs exactes, la matière, la coupe et le niveau de formalité.
+            Ajoute tes pièces en photo, ou scanne directement un ticket de caisse. L&apos;IA reconnaît le type, les couleurs exactes, la matière, la coupe et le niveau de formalité.
             Commence par 10 essentiels (hauts, bas, chaussures, une veste).
           </p>
         </div>
@@ -100,6 +105,8 @@ export default function DressingPage() {
         ))}
       </div>
 
+      {scanning && <ReceiptScan onClose={() => setScanning(false)} onAdd={(news) => setItems((xs) => [...news, ...xs])} />}
+
       {editing && (
         <EditItem
           item={editing}
@@ -114,11 +121,34 @@ export default function DressingPage() {
 
 function EditItem({ item, onClose, onSave, onDelete }: { item: Item; onClose: () => void; onSave: (i: Item) => void; onDelete: () => void }) {
   const [it, setIt] = useState(item);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const photoInput = useRef<HTMLInputElement>(null);
+
+  // Ajout / remplacement de photo : l'IA affine couleurs, matière et coupe, on garde nom, prix, taille…
+  async function addPhoto(file: File) {
+    setBusy(true); setErr("");
+    try {
+      const photo = await compressImage(file);
+      const a = await apiFetch("/api/analyze-item", { photo });
+      setIt((x) => ({ ...x, photo, colors: a.colors, pattern: a.pattern, material: a.material, fit: a.fit }));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className="fixed inset-0 z-30 grid place-items-end bg-ink/40 sm:place-items-center" onClick={onClose}>
       <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl bg-card p-5 sm:max-w-md sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex gap-4">
-          <div className="w-28 shrink-0"><ItemThumb item={it} /></div>
+          <div className="w-28 shrink-0 space-y-1">
+            <ItemThumb item={it} />
+            <button className="w-full text-xs text-muted underline" disabled={busy} onClick={() => photoInput.current?.click()}>
+              {busy ? "Analyse…" : it.photo ? "Changer la photo" : "📷 Ajouter une photo"}
+            </button>
+            <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={(e) => e.target.files?.[0] && addPhoto(e.target.files[0])} />
+          </div>
           <div className="flex-1 space-y-2">
             <input className="input" value={it.name} onChange={(e) => setIt({ ...it, name: e.target.value })} />
             <select className="input capitalize" value={it.category} onChange={(e) => setIt({ ...it, category: e.target.value as Category })}>
@@ -147,9 +177,18 @@ function EditItem({ item, onClose, onSave, onDelete }: { item: Item; onClose: ()
             <div><dt className="text-muted">Motif</dt><dd>{it.pattern}</dd></div>
             <div><dt className="text-muted">Formalité</dt><dd>{"●".repeat(it.formality)}{"○".repeat(5 - it.formality)}</dd></div>
             <div><dt className="text-muted">Chaleur</dt><dd>{"●".repeat(it.warmth)}{"○".repeat(5 - it.warmth)}</dd></div>
+            {(it.store || it.price || it.size) && (
+              <div className="col-span-2"><dt className="text-muted">Achat</dt>
+                <dd>
+                  {[it.store, it.size && `T. ${it.size}`, it.price && `${it.price.toFixed(2)} €`, it.purchaseDate && new Date(it.purchaseDate).toLocaleDateString("fr-FR")].filter(Boolean).join(" · ")}
+                  {it.price ? ` · coût par port : ${(it.price / Math.max(1, it.wornCount)).toFixed(2)} €` : ""}
+                </dd>
+              </div>
+            )}
             <div className="col-span-2"><dt className="text-muted">Saisons · style</dt><dd>{it.seasons.join(", ")} · {it.styleTags.join(", ")}</dd></div>
           </dl>
         </div>
+        {err && <p className="mt-3 text-sm text-accent">{err}</p>}
         <div className="mt-5 flex justify-between">
           <button className="text-sm text-accent underline" onClick={() => confirm("Supprimer cette pièce ?") && onDelete()}>Supprimer</button>
           <div className="flex gap-2">

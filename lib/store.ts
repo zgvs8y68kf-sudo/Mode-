@@ -119,5 +119,5 @@ export const newId = () =>
 
 /** Version compacte de la garde-robe envoyée à l'IA (sans les photos). */
 export function wardrobeForAI(items: Item[]) {
-  return items.map(({ photo, createdAt, ...rest }) => rest);
+  return items.map(({ photo, createdAt, price, purchaseDate, store, source, ...rest }) => rest);
 }
