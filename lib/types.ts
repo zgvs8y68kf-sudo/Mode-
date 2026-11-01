@@ -62,9 +62,15 @@ export interface ItemColor {
   name: string;
 }
 
+export type ImageSource = "product" | "cutout" | "ai" | "photo";
+
 export interface Item {
   id: string;
-  photo?: string; // data URL compressée
+  photo?: string; // photo prise par la personne (data URL compressée)
+  cutout?: string; // vêtement détouré sur fond blanc (data URL)
+  productImage?: string; // photo officielle de la marque (URL)
+  aiImage?: string; // packshot généré par IA (data URL)
+  imageSource?: ImageSource; // image choisie pour l'affichage
   name: string;
   category: Category;
   subtype: string;

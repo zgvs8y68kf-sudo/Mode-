@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
 import ReceiptScan from "@/components/ReceiptScan";
+import ImagePicker from "@/components/ImagePicker";
+import { makeCutout } from "@/lib/cutout";
 import Empty from "@/components/Empty";
 import { compressImage } from "@/lib/image";
 import { apiFetch } from "@/lib/apiFetch";
@@ -27,8 +29,9 @@ export default function DressingPage() {
       const photo = await compressImage(file);
       setPending((p) => [...p, { key, photo, status: "analyse" }]);
       try {
-        const data = await apiFetch("/api/analyze-item", { photo });
-        const item: Item = { ...data, id: newId(), photo, wornCount: 0, createdAt: new Date().toISOString() };
+        const { outline, ...data } = await apiFetch("/api/analyze-item", { photo });
+        const cutout = await makeCutout(photo, outline ?? []).catch(() => undefined);
+        const item: Item = { ...data, id: newId(), photo, cutout, source: "photo", wornCount: 0, createdAt: new Date().toISOString() };
         setItems((xs) => [item, ...xs]);
         setPending((p) => p.filter((x) => x.key !== key));
       } catch (e) {
@@ -131,7 +134,8 @@ function EditItem({ item, onClose, onSave, onDelete }: { item: Item; onClose: ()
     try {
       const photo = await compressImage(file);
       const a = await apiFetch("/api/analyze-item", { photo });
-      setIt((x) => ({ ...x, photo, colors: a.colors, pattern: a.pattern, material: a.material, fit: a.fit }));
+      const cutout = await makeCutout(photo, a.outline ?? []).catch(() => undefined);
+      setIt((x) => ({ ...x, photo, cutout, imageSource: undefined, colors: a.colors, pattern: a.pattern, material: a.material, fit: a.fit }));
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -157,6 +161,7 @@ function EditItem({ item, onClose, onSave, onDelete }: { item: Item; onClose: ()
           </div>
         </div>
         <div className="mt-4 space-y-3 text-sm">
+          <ImagePicker item={it} onChange={(patch) => setIt((x) => ({ ...x, ...patch }))} />
           <div>
             <span className="label">Couleurs</span>
             <div className="flex flex-wrap gap-3">

@@ -5,8 +5,11 @@ import { GoogleGenAI, ThinkingLevel, type Part } from "@google/genai";
 // Le modèle par défaut est l'alias "gemini-flash-latest" (mis à jour par Google).
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
-// Modèle de secours si le principal est saturé (503) ou hors quota (429).
-const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-flash-lite-latest";
+// Modèles de secours, essayés dans l'ordre si le principal est saturé (503), hors quota (429) ou trop lent.
+const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash,gemini-flash-lite-latest")
+  .split(",").map((m) => m.trim()).filter((m) => m && m !== MODEL);
+// Génération / édition d'images (packshots). Nécessite la facturation activée sur la clé Gemini.
+const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
 
 let client: GoogleGenAI | null = null;
 function ai() {
@@ -38,27 +41,45 @@ Principes de base (consensus de plusieurs sources mode) :
 
 type GenParams = Parameters<GoogleGenAI["models"]["generateContent"]>[0];
 
-/** Appelle le modèle principal, puis le modèle de secours en cas de saturation / quota / délai. */
-// Les fonctions Vercel sont limitées à 60 s : le principal a 20 s, puis bascule sur le secours.
+/**
+ * Appelle le modèle principal puis les modèles de secours (saturation, quota, délai).
+ * Budget total < 60 s (limite des fonctions Vercel).
+ */
 async function generate(params: Omit<GenParams, "model">) {
-  const config = {
-    ...params.config,
-    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-  };
+  const config = { ...params.config, thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } };
+  const chain = [MODEL, ...FALLBACK_MODELS];
+  const budgets = [15_000, 18_000, 20_000];
+  let last: unknown;
+  for (let i = 0; i < chain.length; i++) {
+    try {
+      return await ai().models.generateContent({
+        ...params,
+        model: chain[i],
+        config: { ...config, abortSignal: AbortSignal.timeout(budgets[i] ?? 15_000) },
+      });
+    } catch (e) {
+      last = e;
+      console.warn(`${chain[i]} indisponible (${String((e as Error).message).slice(0, 80)})`);
+    }
+  }
+  throw last;
+}
+
+/** Génère une image (packshot). Renvoie une data URL. */
+export async function generateImage(prompt: string, images: { mimeType: string; data: string }[] = []) {
   try {
-    return await ai().models.generateContent({
-      ...params,
-      model: MODEL,
-      config: { ...config, abortSignal: AbortSignal.timeout(20_000) },
+    const res = await ai().models.generateContent({
+      model: IMAGE_MODEL,
+      contents: [{ role: "user", parts: [...images.map((i) => ({ inlineData: i })), { text: prompt }] }],
+      config: { responseModalities: ["IMAGE"], abortSignal: AbortSignal.timeout(50_000) },
     });
+    const img = res.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;
+    if (!img?.data) throw new Error("Aucune image générée");
+    return `data:${img.mimeType ?? "image/png"};base64,${img.data}`;
   } catch (e) {
-    if (FALLBACK_MODEL === MODEL) throw e;
-    console.warn(`${MODEL} indisponible (${String((e as Error).message).slice(0, 80)}), bascule sur ${FALLBACK_MODEL}`);
-    return ai().models.generateContent({
-      ...params,
-      model: FALLBACK_MODEL,
-      config: { ...config, abortSignal: AbortSignal.timeout(30_000) },
-    });
+    if (/429|RESOURCE_EXHAUSTED|quota/i.test(String((e as Error).message)))
+      throw new Error("La génération d'images nécessite d'activer la facturation sur la clé Gemini (Google AI Studio > Billing).");
+    throw e;
   }
 }
 

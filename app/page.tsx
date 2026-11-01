@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Avatar from "@/components/Avatar";
 import Empty from "@/components/Empty";
 import Landing from "@/components/Landing";
-import ItemThumb from "@/components/ItemThumb";
+import OutfitBoard from "@/components/OutfitBoard";
 import MissingCard from "@/components/MissingCard";
 import { HARMONY_HELP, harmonyOf } from "@/lib/color";
 import { useHistory, useItems, useProfile, wardrobeForAI } from "@/lib/store";
@@ -117,14 +117,8 @@ export default function Today() {
                   <h2 className="text-2xl">{o.title}</h2>
                   <span className="rounded-full bg-paper px-3 py-1 text-xs" title={HARMONY_HELP[harmony]}>◐ {harmony}</span>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {its.map((i) => (
-                    <div key={i.id} className="w-20 space-y-1">
-                      <ItemThumb item={i} size="sm" />
-                      <p className="line-clamp-2 text-[11px] leading-tight text-muted">{i.name}</p>
-                    </div>
-                  ))}
-                </div>
+                <OutfitBoard items={its} missing={o.missing} />
+                <p className="text-center text-xs text-muted">{its.map((i) => i.name).join(" · ")}</p>
                 <p className="text-sm">{o.why}</p>
                 <p className="text-sm text-muted"><b className="text-ink">Couleurs :</b> {o.colorStory}</p>
                 <p className="text-sm text-muted"><b className="text-ink">Astuce :</b> {o.tip}</p>
