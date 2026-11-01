@@ -1,11 +1,12 @@
 import { generateJSON, parseDataUrl } from "@/lib/gemini";
 import { itemSchema } from "@/lib/schemas";
-import { jsonError, readBody } from "@/lib/api";
+import { jsonError, readBody, requireUser } from "@/lib/api";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
+    await requireUser(req);
     const { photo } = await readBody<{ photo: string }>(req);
     const result = await generateJSON({
       images: [parseDataUrl(photo)],

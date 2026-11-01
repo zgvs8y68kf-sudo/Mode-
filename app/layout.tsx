@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import { AuthProvider } from "@/components/AuthProvider";
+import Gate from "@/components/Gate";
 
 export const metadata: Metadata = {
   title: "Dressing — ton styliste IA",
@@ -13,8 +15,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className="min-h-dvh">
-        <Nav />
-        <main className="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:pb-12">{children}</main>
+        <AuthProvider>
+          <Nav />
+          <main className="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:pb-12">
+            <Gate>{children}</Gate>
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );

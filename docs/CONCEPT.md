@@ -71,7 +71,7 @@ Points de désaccord, gardés avec prudence : le **violet royal** (Who What Wear
 ## 6. Feuille de route
 
 **V1.1 (court terme)**
-- Comptes et synchronisation multi-appareils : Supabase Auth + Postgres + Storage (ou Neon + Auth.js via Vercel Marketplace). Aujourd'hui tout est stocké en local dans le navigateur (IndexedDB).
+- ✅ Comptes et synchronisation multi-appareils : Firebase Auth + Firestore (fait).
 - Détourage automatique des photos (fond blanc) et ajout depuis une capture d'écran e-shop.
 - Calendrier : planifier les tenues de la semaine ou d'une valise de voyage.
 - Limite de requêtes IA par utilisateur (protection du coût de l'API).
@@ -85,7 +85,7 @@ Points de désaccord, gardés avec prudence : le **violet royal** (Who What Wear
 **Modèle économique** : gratuit jusqu'à N pièces et N tenues par jour. Premium (environ 4,99 €/mois) : illimité, essayage virtuel, planification. Commission d'affiliation sur les achats.
 
 ## 7. Risques et garde-fous
-- **Vie privée** : photos et selfie sensibles. Stockage local par défaut, selfie jamais conservé côté serveur.
+- **Vie privée** : photos et selfie sensibles. Règles Firestore strictes (chacun n'accède qu'à ses données), selfie jamais conservé.
 - **Biais** : ne jamais formuler la morphologie comme un défaut à cacher (ton bienveillant imposé dans le prompt).
 - **Coût de l'IA** : photos compressées à 720 px, garde-robe envoyée sans images, cache quotidien des tendances.
 

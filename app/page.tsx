@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import Empty from "@/components/Empty";
+import Landing from "@/components/Landing";
 import ItemThumb from "@/components/ItemThumb";
 import MissingCard from "@/components/MissingCard";
 import { HARMONY_HELP, harmonyOf } from "@/lib/color";
 import { useHistory, useItems, useProfile, wardrobeForAI } from "@/lib/store";
+import { apiFetch } from "@/lib/apiFetch";
 import { getWeather, weatherEmoji } from "@/lib/weather";
 import { OCCASIONS, type Outfit, type Weather } from "@/lib/types";
 
@@ -38,13 +39,9 @@ export default function Today() {
     setLoading(true); setError(""); setResult(null); setWorn(null);
     try {
       const occ = OCCASIONS.find((o) => o.id === occasion)?.label ?? occasion;
-      const r = await fetch("/api/outfit", {
-        method: "POST",
-        body: JSON.stringify({ profile, wardrobe: wardrobeForAI(items), weather, occasion: occ, note, recent: history.slice(0, 7) }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setResult(data);
+      setResult(await apiFetch("/api/outfit", {
+        profile, wardrobe: wardrobeForAI(items), weather, occasion: occ, note, recent: history.slice(0, 7),
+      }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -60,31 +57,7 @@ export default function Today() {
   }
 
   if (!ready) return null;
-  if (!profile)
-    return (
-      <div className="space-y-10">
-        <section className="grid items-center gap-8 py-6 md:grid-cols-[1.3fr_1fr]">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">Ton styliste IA</p>
-            <h1 className="mt-3 text-5xl leading-[1.05] sm:text-6xl">Bien s&apos;habiller,<br />sans se prendre la tête.</h1>
-            <p className="mt-4 max-w-md text-muted">
-              Numérise ta garde-robe en photo. Chaque matin, reçois la tenue complète qui va avec la météo, ton programme,
-              ta morphologie et tes couleurs. Et découvre la pièce qui manque vraiment.
-            </p>
-            <Link href="/profil" className="btn mt-6">Créer mon profil — 2 min</Link>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {[["1", "Ton profil", "Morphologie, carnation, style"], ["2", "Ton dressing", "Une photo par pièce, l'IA fait le reste"], ["3", "Ta tenue", "Météo + occasion = la bonne tenue"]].map(([n, t, d]) => (
-              <div key={n} className="card p-4">
-                <p className="font-serif text-3xl text-accent">{n}</p>
-                <p className="mt-2 text-sm font-medium">{t}</p>
-                <p className="text-xs text-muted">{d}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    );
+  if (!profile) return <Landing />;
 
   const byId = new Map(items.map((i) => [i.id, i]));
 

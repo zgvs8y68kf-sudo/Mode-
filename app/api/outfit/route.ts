@@ -1,13 +1,14 @@
 import { cachedTrends, generateJSON } from "@/lib/gemini";
 import { outfitsSchema } from "@/lib/schemas";
 import { describeProfile } from "@/lib/describe";
-import { jsonError, readBody } from "@/lib/api";
+import { jsonError, readBody, requireUser } from "@/lib/api";
 import type { Profile, Weather, WornEntry } from "@/lib/types";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
+    await requireUser(req);
     const { profile, wardrobe, weather, occasion, note, recent } = await readBody<{
       profile: Profile;
       wardrobe: unknown[];

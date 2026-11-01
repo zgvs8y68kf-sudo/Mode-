@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { get, set } from "idb-keyval";
+import { useRef, useState } from "react";
 import ColorWheel from "@/components/ColorWheel";
 import Empty from "@/components/Empty";
 import ItemThumb from "@/components/ItemThumb";
 import MissingCard from "@/components/MissingCard";
 import { compressImage } from "@/lib/image";
-import { useItems, useProfile, wardrobeForAI } from "@/lib/store";
+import { useAudit, useItems, useProfile, wardrobeForAI } from "@/lib/store";
+import { apiFetch } from "@/lib/apiFetch";
 import { CATEGORIES, type ItemColor, type MissingPiece } from "@/lib/types";
 
 interface Audit {
@@ -27,25 +27,19 @@ interface Audit {
 export default function AnalysePage() {
   const [profile, setProfile, ready] = useProfile();
   const [items] = useItems();
-  const [audit, setAudit] = useState<Audit | null>(null);
+  const [audit, setAudit] = useAudit<Audit>();
   const [selfie, setSelfie] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { get<Audit>("audit").then((a) => a && setAudit(a)); }, []);
 
   async function run() {
     setLoading(true); setError("");
     try {
-      const r = await fetch("/api/audit", {
-        method: "POST",
-        body: JSON.stringify({ profile, wardrobe: wardrobeForAI(items), selfie: selfie || undefined }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
+      const data = await apiFetch("/api/audit", { profile, wardrobe: wardrobeForAI(items), selfie: selfie || undefined });
       const a = { ...data, at: new Date().toISOString() };
-      setAudit(a); set("audit", a);
+      setAudit(a);
       if (profile) setProfile({ ...profile, colorSeason: a.colorSeason });
     } catch (e) {
       setError((e as Error).message);

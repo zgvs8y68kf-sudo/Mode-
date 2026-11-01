@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useProfile } from "@/lib/store";
+import { apiFetch } from "@/lib/apiFetch";
 
 type Trends = { text: string; sources: { url: string; title: string }[]; grounded: boolean };
 
@@ -25,10 +26,7 @@ export default function TendancesPage() {
   async function load() {
     setLoading(true); setError("");
     try {
-      const r = await fetch(`/api/trends?sex=${profile?.sex ?? "mixte"}`);
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error);
-      setData(j);
+      setData(await apiFetch(`/api/trends?sex=${profile?.sex ?? "mixte"}`));
     } catch (e) {
       setError((e as Error).message);
     } finally {

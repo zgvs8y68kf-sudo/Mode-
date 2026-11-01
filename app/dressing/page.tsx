@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
 import Empty from "@/components/Empty";
 import { compressImage } from "@/lib/image";
+import { apiFetch } from "@/lib/apiFetch";
 import { newId, useItems, useProfile } from "@/lib/store";
 import { CATEGORIES, type Category, type Item } from "@/lib/types";
 
@@ -24,9 +25,7 @@ export default function DressingPage() {
       const photo = await compressImage(file);
       setPending((p) => [...p, { key, photo, status: "analyse" }]);
       try {
-        const r = await fetch("/api/analyze-item", { method: "POST", body: JSON.stringify({ photo }) });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error);
+        const data = await apiFetch("/api/analyze-item", { photo });
         const item: Item = { ...data, id: newId(), photo, wornCount: 0, createdAt: new Date().toISOString() };
         setItems((xs) => [item, ...xs]);
         setPending((p) => p.filter((x) => x.key !== key));
