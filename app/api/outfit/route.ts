@@ -1,6 +1,7 @@
 import { cachedTrends, generateJSON } from "@/lib/gemini";
 import { outfitsSchema } from "@/lib/schemas";
 import { describeProfile } from "@/lib/describe";
+import { shopsForPrompt } from "@/lib/shops";
 import { jsonError, readBody, requireUser } from "@/lib/api";
 import type { Profile, Weather, WornEntry } from "@/lib/types";
 
@@ -39,6 +40,8 @@ ${trends?.text?.slice(0, 2500) ?? "non disponibles"}
 
 PORTÉ RÉCEMMENT (évite de répéter les mêmes associations) :
 ${JSON.stringify(recent?.slice(0, 7) ?? [])}
+
+${shopsForPrompt(profile.budget, profile.shops)}
 
 GARDE-ROBE (JSON, utilise UNIQUEMENT ces id dans itemIds) :
 ${JSON.stringify(wardrobe)}

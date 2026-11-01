@@ -3,17 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import BodyScan, { scanToProfile } from "@/components/BodyScan";
 import { useProfile } from "@/lib/store";
-import { SHOPS } from "@/lib/shops";
-import { MORPHOLOGIES, type Profile, type Sex, type Undertone } from "@/lib/types";
+import { SHOPS, SHOP_GROUPS } from "@/lib/shops";
+import { EYES, HAIRS, MORPHOLOGIES, SKINS, type Profile, type Sex, type Undertone } from "@/lib/types";
 
-const SKINS = ["#f6e1d3", "#efcfb6", "#e2b593", "#d29c78", "#bb7f5a", "#9a6243", "#7a4a31", "#5a3524", "#3e2419"];
-const HAIRS = [
-  { hex: "#1c1714", label: "noirs" }, { hex: "#3b2a20", label: "brun foncé" }, { hex: "#6b4a32", label: "châtains" },
-  { hex: "#a4774a", label: "châtain clair" }, { hex: "#d8b77a", label: "blonds" }, { hex: "#a8462a", label: "roux" },
-  { hex: "#9c9a96", label: "gris" }, { hex: "#e8e4dc", label: "blancs" },
-];
-const EYES = ["marron foncé", "marron", "noisette", "vert", "bleu-gris", "bleu", "gris"];
 const GOALS = [
   "Minimaliste / intemporel", "Smart casual", "Streetwear", "Classique chic", "Workwear",
   "Romantique", "Rock / néo-goth", "Sport-chic", "Bohème", "Oser la couleur",
@@ -50,14 +44,16 @@ export default function ProfilPage() {
 
       <form
         className="space-y-6"
-        onSubmit={(e) => { e.preventDefault(); setSaved({ ...p, colorSeason: saved?.colorSeason }); router.push(saved ? "/" : "/dressing"); }}
+        onSubmit={(e) => { e.preventDefault(); setSaved({ ...p, colorSeason: p.colorSeason ?? saved?.colorSeason }); router.push(saved ? "/" : "/dressing"); }}
       >
         <div>
           <h1 className="text-3xl">{saved ? "Ton profil" : "Créons ton profil"}</h1>
           <p className="mt-1 text-sm text-muted">
-            Ces infos restent sur ton appareil. Elles permettent à l&apos;IA d&apos;adapter coupes et couleurs à toi.
+            Ces infos permettent à l&apos;IA d&apos;adapter coupes et couleurs à toi. Remplis-les à la main ou laisse l&apos;IA les calculer.
           </p>
         </div>
+
+        <BodyScan heightCm={p.heightCm} onResult={(r) => setP((x) => ({ ...x, ...scanToProfile(r) }))} />
 
         <section className="card grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2"><span className="label">Prénom</span>
@@ -98,7 +94,7 @@ export default function ProfilPage() {
           <div>
             <span className="label">Carnation</span>
             <div className="flex flex-wrap gap-2">
-              {SKINS.map((s) => (
+              {[...SKINS, ...(SKINS.includes(p.skinHex) ? [] : [p.skinHex])].map((s) => (
                 <button type="button" key={s} onClick={() => up("skinHex", s)} aria-label={s}
                   className={`h-9 w-9 rounded-full border-2 ${p.skinHex === s ? "border-ink" : "border-transparent"}`} style={{ background: s }} />
               ))}
@@ -157,10 +153,18 @@ export default function ProfilPage() {
             </div>
           </div>
           <div>
-            <span className="label">Enseignes préférées</span>
-            <div className="flex flex-wrap gap-2">
-              {SHOPS.map((s) => (
-                <button type="button" key={s.id} onClick={() => toggle("shops", s.id)} className={`chip ${p.shops.includes(s.id) ? "chip-on" : ""}`}>{s.name}</button>
+            <span className="label">Enseignes préférées ({p.shops.length})</span>
+            <div className="space-y-3">
+              {SHOP_GROUPS.map((g) => (
+                <div key={g}>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wider text-muted">{g}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SHOPS.filter((s) => s.group === g).map((s) => (
+                      <button type="button" key={s.id} onClick={() => toggle("shops", s.id)}
+                        className={`chip px-2.5 py-1 text-xs ${p.shops.includes(s.id) ? "chip-on" : ""}`}>{s.name}</button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

@@ -130,3 +130,12 @@ export const OCCASIONS = [
   { id: "mariage", label: "Mariage / cérémonie", emoji: "💐" },
   { id: "voyage", label: "Voyage", emoji: "✈️" },
 ];
+
+// Palettes de saisie du profil
+export const SKINS = ["#f6e1d3", "#efcfb6", "#e2b593", "#d29c78", "#bb7f5a", "#9a6243", "#7a4a31", "#5a3524", "#3e2419"];
+export const HAIRS = [
+  { hex: "#1c1714", label: "noirs" }, { hex: "#3b2a20", label: "brun foncé" }, { hex: "#6b4a32", label: "châtains" },
+  { hex: "#a4774a", label: "châtain clair" }, { hex: "#d8b77a", label: "blonds" }, { hex: "#a8462a", label: "roux" },
+  { hex: "#9c9a96", label: "gris" }, { hex: "#e8e4dc", label: "blancs" },
+];
+export const EYES = ["marron foncé", "marron", "noisette", "vert", "bleu-gris", "bleu", "gris"];

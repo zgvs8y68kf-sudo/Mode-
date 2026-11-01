@@ -16,7 +16,7 @@
 
 | Pilier | Ce que fait l'app | État |
 |---|---|---|
-| **Profil et avatar** | Genre, âge, taille, morphologie, carnation, sous-ton, yeux, cheveux, styles souhaités, budget, enseignes préférées. Avatar SVG qui s'adapte au profil | ✅ MVP |
+| **Profil et avatar** | **Calcul automatique depuis une photo en pied** (sous-vêtements ou tenue près du corps) + selfie facultatif : morphologie, carnation, sous-ton, cheveux, yeux, saison colorimétrique. Photos jamais stockées, consentement et 18 ans ou plus requis. Saisie manuelle possible : genre, âge, taille, morphologie, carnation, sous-ton, yeux, cheveux, styles souhaités, budget, enseignes préférées. Avatar SVG qui s'adapte au profil | ✅ MVP |
 | **Dressing numérique** | Une photo par pièce. Gemini Vision détecte le type, les couleurs exactes (#hex), la matière, la coupe, la formalité (1 à 5), la chaleur (1 à 5), les saisons et le style | ✅ MVP |
 | **Tenue du jour** | Météo (Open-Meteo) + occasion + profil + tendances du jour → 3 tenues complètes (sûre / tendance / audacieuse) avec explication, harmonie de couleurs, astuce et pièce manquante éventuelle. Bouton « Je porte celle-ci » pour l'historique et l'anti-répétition | ✅ MVP |
 | **Analyse et shopping intelligent** | Saison colorimétrique (selfie en option), palette flatteuse, couleurs à éloigner du visage, coupes adaptées, directions de style tirées du dressing existant, forces et faiblesses, **pièces manquantes classées par impact** avec liens Zalando / Uniqlo / H&M / Zara / Levi's / Vinted | ✅ MVP |

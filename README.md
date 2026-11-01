@@ -1,6 +1,6 @@
 # Dressing : ton styliste IA
 
-Web app Next.js (déployable sur Vercel). Elle numérise ta garde-robe en photo et propose chaque jour une tenue complète selon la **météo**, l'**occasion**, ta **morphologie** et tes **couleurs**. Elle repère aussi les **pièces manquantes** et donne des liens vers Zalando, Uniqlo, H&M, Zara, Levi's et Vinted.
+Web app Next.js (déployable sur Vercel). Elle numérise ta garde-robe en photo et propose chaque jour une tenue complète selon la **météo**, l'**occasion**, ta **morphologie** et tes **couleurs**. Elle repère aussi les **pièces manquantes** et donne des liens de recherche vers **130 enseignes** (multimarques, mode accessible, marques françaises, premium, sport, chaussures, accessoires, seconde main). Le **profil** peut être calculé automatiquement à partir d'une photo en pied.
 
 👉 Concept détaillé, recherche mode sourcée et feuille de route : [`docs/CONCEPT.md`](docs/CONCEPT.md)
 
@@ -43,7 +43,7 @@ app/
   dressing/           Garde-robe : ajout photo → numérisation IA, édition
   analyse/            Roue des couleurs, saison colorimétrique, coupes, styles, pièces manquantes
   tendances/          Veille tendances en direct (avec sources)
-  api/                analyze-item · outfit · audit · trends (appels Gemini)
+  api/                analyze-item · outfit · audit · trends · body-profile (appels Gemini)
 lib/
   gemini.ts           Client Gemini, consignes du styliste, veille tendances (cache quotidien)
   schemas.ts          Schémas JSON imposés à l'IA

@@ -1,6 +1,7 @@
 import { cachedTrends, generateJSON, parseDataUrl } from "@/lib/gemini";
 import { auditSchema } from "@/lib/schemas";
 import { describeProfile } from "@/lib/describe";
+import { shopsForPrompt } from "@/lib/shops";
 import { jsonError, readBody, requireUser } from "@/lib/api";
 import type { Profile } from "@/lib/types";
 
@@ -27,6 +28,8 @@ ${selfie ? "Une photo du visage en lumière naturelle est jointe : utilise-la po
 
 TENDANCES ACTUELLES (recherche web du jour) :
 ${trends?.text?.slice(0, 3000) ?? "non disponibles"}
+
+${shopsForPrompt(profile.budget, profile.shops)}
 
 GARDE-ROBE (JSON) :
 ${JSON.stringify(wardrobe)}

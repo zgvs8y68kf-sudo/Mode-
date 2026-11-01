@@ -128,7 +128,7 @@ export default function Today() {
                 <p className="text-sm">{o.why}</p>
                 <p className="text-sm text-muted"><b className="text-ink">Couleurs :</b> {o.colorStory}</p>
                 <p className="text-sm text-muted"><b className="text-ink">Astuce :</b> {o.tip}</p>
-                {o.missing.map((m, j) => <MissingCard key={j} piece={m} preferred={profile.shops} />)}
+                {o.missing.map((m, j) => <MissingCard key={j} piece={m} preferred={profile.shops} budget={profile.budget} />)}
                 <button className={worn === idx ? "btn-ghost" : "btn"} disabled={worn !== null} onClick={() => wear(idx, o)}>
                   {worn === idx ? "✓ C'est noté, belle journée !" : "Je porte celle-ci"}
                 </button>

@@ -82,7 +82,14 @@ export async function generateJSON<T>(opts: {
     },
   });
   const text = res.text;
-  if (!text) throw new Error("Réponse vide de Gemini");
+  if (!text) {
+    const blocked = res.promptFeedback?.blockReason || res.candidates?.[0]?.finishReason;
+    throw new Error(
+      blocked && /SAFETY|PROHIBITED|BLOCK|IMAGE_SAFETY/i.test(String(blocked))
+        ? "L'image a été bloquée par le filtre de sécurité de l'IA. Réessaie avec une tenue près du corps (legging, t-shirt ajusté)."
+        : "Réponse vide de Gemini",
+    );
+  }
   return JSON.parse(text) as T;
 }
 

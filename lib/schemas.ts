@@ -1,5 +1,5 @@
 // Schémas JSON imposés à Gemini (structured output).
-import { CATEGORIES } from "./types";
+import { CATEGORIES, EYES, HAIRS } from "./types";
 
 const color = {
   type: "object",
@@ -93,4 +93,31 @@ export const auditSchema = {
     underused: { type: "array", items: { type: "string" }, description: "IDs de pièces peu exploitées et comment les porter" },
   },
   required: ["colorSeason", "colorSeasonWhy", "bestColors", "avoidColors", "morphologyTips", "styleDirections", "strengths", "weaknesses", "missingPieces"],
+};
+
+/** Profil déduit d'une photo en pied (sous-vêtements ou tenue près du corps) + selfie optionnel. */
+export const bodyProfileSchema = {
+  type: "object",
+  properties: {
+    usable: { type: "boolean", description: "false si la photo est inexploitable, montre une personne qui semble mineure, ou de la nudité" },
+    reason: { type: "string", description: "Si usable=false : pourquoi, et comment refaire la photo. Sinon chaîne vide." },
+    sex: { type: "string", enum: ["femme", "homme", "non-binaire"], description: "Rayon le plus probable selon la silhouette (modifiable par la personne)" },
+    ageEstimate: { type: "integer", minimum: 18, maximum: 99 },
+    morphology: {
+      type: "string",
+      enum: ["sablier", "triangle", "triangle-inverse", "rectangle", "ovale", "trapeze"],
+      description: "Femme/non-binaire : sablier, triangle, triangle-inverse, rectangle, ovale. Homme : trapeze, triangle-inverse, rectangle, triangle, ovale.",
+    },
+    proportions: { type: "string", description: "2-3 phrases bienveillantes : épaules vs hanches, définition de la taille, rapport buste/jambes" },
+    legsVsTorso: { type: "string", enum: ["jambes longues", "équilibré", "buste long"] },
+    skinHex: { type: "string", description: "Carnation moyenne (joue/avant-bras) en #rrggbb, éclairage corrigé" },
+    undertone: { type: "string", enum: ["chaud", "froid", "neutre"] },
+    hairLabel: { type: "string", enum: HAIRS.map((h) => h.label) },
+    hairHex: { type: "string" },
+    eyeColor: { type: "string", enum: [...EYES, "non visible"] },
+    contrast: { type: "string", enum: ["faible", "moyen", "fort"], description: "Contraste cheveux / peau / yeux" },
+    colorSeason: { type: "string", description: "Saison colorimétrique estimée, ex. 'Été doux', 'Hiver profond'" },
+    tips: { type: "array", items: { type: "string" }, description: "3 conseils clés de coupes et couleurs, formulés positivement" },
+  },
+  required: ["usable", "reason", "sex", "ageEstimate", "morphology", "proportions", "legsVsTorso", "skinHex", "undertone", "hairLabel", "hairHex", "eyeColor", "contrast", "colorSeason", "tips"],
 };

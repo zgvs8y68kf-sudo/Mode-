@@ -154,7 +154,7 @@ export default function AnalysePage() {
             <h2 className="text-2xl">Les pièces qui manquent</h2>
             <p className="text-sm text-muted">Classées par impact : chaque pièce débloque plusieurs nouvelles tenues avec ce que tu as déjà.</p>
             <div className="grid gap-3 md:grid-cols-2">
-              {audit.missingPieces.map((m, i) => <MissingCard key={i} piece={m} preferred={profile.shops} />)}
+              {audit.missingPieces.map((m, i) => <MissingCard key={i} piece={m} preferred={profile.shops} budget={profile.budget} />)}
             </div>
           </section>
           {audit.at && <p className="text-xs text-muted">Analyse du {new Date(audit.at).toLocaleDateString("fr-FR")}</p>}
