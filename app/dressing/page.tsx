@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
 import ReceiptScan from "@/components/ReceiptScan";
 import ImagePicker from "@/components/ImagePicker";
 import { makeCutout } from "@/lib/cutout";
-import Empty from "@/components/Empty";
+import { usePhotoPicker } from "@/components/usePhotoPicker";
+import Link from "next/link";
 import { compressImage } from "@/lib/image";
 import { apiFetch } from "@/lib/apiFetch";
 import { newId, useItems, useProfile } from "@/lib/store";
@@ -20,30 +21,32 @@ export default function DressingPage() {
   const [pending, setPending] = useState<Pending[]>([]);
   const [editing, setEditing] = useState<Item | null>(null);
   const [scanning, setScanning] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
+  const picker = usePhotoPicker((files) => addPhotos(files), { multiple: true });
 
-  async function addPhotos(files: FileList | null) {
-    if (!files) return;
-    for (const file of Array.from(files)) {
+  async function addPhotos(files: File[]) {
+    for (const file of files) {
       const key = newId();
       const photo = await compressImage(file);
       setPending((p) => [...p, { key, photo, status: "analyse" }]);
-      try {
-        const { outline, ...data } = await apiFetch("/api/analyze-item", { photo });
-        const cutout = await makeCutout(photo, outline ?? []).catch(() => undefined);
-        const item: Item = { ...data, id: newId(), photo, cutout, source: "photo", wornCount: 0, createdAt: new Date().toISOString() };
-        setItems((xs) => [item, ...xs]);
-        setPending((p) => p.filter((x) => x.key !== key));
-      } catch (e) {
-        setPending((p) => p.map((x) => (x.key === key ? { ...x, status: "erreur", error: String((e as Error).message) } : x)));
-      }
+      await analyse(key, photo);
     }
-    if (input.current) input.current.value = "";
   }
 
+  async function analyse(key: string, photo: string) {
+    setPending((p) => p.map((x) => (x.key === key ? { ...x, status: "analyse", error: undefined } : x)));
+    try {
+      const { outline, ...data } = await apiFetch("/api/analyze-item", { photo });
+      const cutout = await makeCutout(photo, outline ?? []).catch(() => undefined);
+      const item: Item = { ...data, id: newId(), photo, cutout, source: "photo", wornCount: 0, createdAt: new Date().toISOString() };
+      setItems((xs) => [item, ...xs]);
+      setPending((p) => p.filter((x) => x.key !== key));
+    } catch (e) {
+      setPending((p) => p.map((x) => (x.key === key ? { ...x, status: "erreur", error: String((e as Error).message) } : x)));
+    }
+  }
+
+
   if (!ready) return null;
-  if (!profile)
-    return <Empty title="Commence par ton profil" text="Quelques infos sur toi pour que les conseils soient vraiment personnalisés." href="/profil" cta="Créer mon profil" />;
 
   const shown = filter === "tout" ? items : items.filter((i) => i.category === filter);
   const counts = Object.fromEntries(CATEGORIES.map((c) => [c, items.filter((i) => i.category === c).length]));
@@ -56,11 +59,19 @@ export default function DressingPage() {
           <p className="text-sm text-muted">{items.length} pièce{items.length > 1 ? "s" : ""} numérisée{items.length > 1 ? "s" : ""}. Photographie chaque pièce à plat ou sur cintre, en lumière naturelle.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button className="btn" onClick={picker.camera}>📷 Prendre en photo</button>
+          <button className="btn-ghost" onClick={picker.gallery}>🖼️ Depuis la galerie</button>
           <button className="btn-ghost" onClick={() => setScanning(true)}>🧾 Scanner un ticket</button>
-          <button className="btn" onClick={() => input.current?.click()}>+ Ajouter des pièces</button>
         </div>
-        <input ref={input} type="file" accept="image/*" multiple capture="environment" hidden onChange={(e) => addPhotos(e.target.files)} />
+        {picker.inputs}
       </div>
+
+      {!profile && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-accent/40 bg-accent-soft/40 p-3 text-sm">
+          <span>Tu peux remplir ton dressing dès maintenant. Crée ton profil ensuite pour recevoir des tenues adaptées à toi.</span>
+          <Link href="/profil" className="btn-ghost shrink-0 py-1.5 text-xs">Créer mon profil</Link>
+        </div>
+      )}
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         <button className={`chip shrink-0 ${filter === "tout" ? "chip-on" : ""}`} onClick={() => setFilter("tout")}>Tout · {items.length}</button>
@@ -94,6 +105,7 @@ export default function DressingPage() {
             {p.status === "erreur" && (
               <p className="text-xs text-accent">
                 {p.error}{" "}
+                <button className="underline" onClick={() => analyse(p.key, p.photo)}>réessayer</button>{" · "}
                 <button className="underline" onClick={() => setPending((x) => x.filter((y) => y.key !== p.key))}>retirer</button>
               </p>
             )}
@@ -126,7 +138,7 @@ function EditItem({ item, onClose, onSave, onDelete }: { item: Item; onClose: ()
   const [it, setIt] = useState(item);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const photoInput = useRef<HTMLInputElement>(null);
+  const photoPicker = usePhotoPicker((f) => addPhoto(f[0]));
 
   // Ajout / remplacement de photo : l'IA affine couleurs, matière et coupe, on garde nom, prix, taille…
   async function addPhoto(file: File) {
@@ -148,10 +160,15 @@ function EditItem({ item, onClose, onSave, onDelete }: { item: Item; onClose: ()
         <div className="flex gap-4">
           <div className="w-28 shrink-0 space-y-1">
             <ItemThumb item={it} />
-            <button className="w-full text-xs text-muted underline" disabled={busy} onClick={() => photoInput.current?.click()}>
-              {busy ? "Analyse…" : it.photo ? "Changer la photo" : "📷 Ajouter une photo"}
-            </button>
-            <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={(e) => e.target.files?.[0] && addPhoto(e.target.files[0])} />
+            {busy ? (
+              <p className="text-center text-xs text-muted">Analyse…</p>
+            ) : (
+              <div className="flex justify-center gap-2 text-xs text-muted">
+                <button className="underline" onClick={photoPicker.camera} title="Appareil photo">📷 Photo</button>
+                <button className="underline" onClick={photoPicker.gallery} title="Galerie">🖼️ Galerie</button>
+              </div>
+            )}
+            {photoPicker.inputs}
           </div>
           <div className="flex-1 space-y-2">
             <input className="input" value={it.name} onChange={(e) => setIt({ ...it, name: e.target.value })} />

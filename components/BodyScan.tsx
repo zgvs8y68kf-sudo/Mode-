@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
+import { usePhotoPicker } from "./usePhotoPicker";
 import { apiFetch } from "@/lib/apiFetch";
 import { compressImage } from "@/lib/image";
 import { HAIRS, type Profile, type Sex, type Undertone } from "@/lib/types";
@@ -40,20 +41,25 @@ export function scanToProfile(r: BodyScanResult): Partial<Profile> {
 }
 
 function PhotoSlot({ label, hint, value, onPick, capture }: { label: string; hint: string; value: string; onPick: (f: File) => void; capture: "user" | "environment" }) {
-  const input = useRef<HTMLInputElement>(null);
+  const picker = usePhotoPicker((f) => onPick(f[0]), { capture });
   return (
-    <button type="button" onClick={() => input.current?.click()}
-      className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-dashed border-line bg-paper p-3 text-center hover:border-ink">
-      {value ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="" className="h-28 w-20 rounded-lg object-cover blur-[2px]" />
-      ) : (
-        <span className="grid h-28 w-20 place-items-center rounded-lg border border-line text-2xl text-muted">+</span>
-      )}
+    <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-dashed border-line bg-paper p-3 text-center">
+      <button type="button" onClick={picker.gallery} className="hover:opacity-80" aria-label={`${label} depuis la galerie`}>
+        {value ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt="" className="h-28 w-20 rounded-lg object-cover blur-[2px]" />
+        ) : (
+          <span className="grid h-28 w-20 place-items-center rounded-lg border border-line text-2xl text-muted">+</span>
+        )}
+      </button>
       <span className="text-sm font-medium">{label}</span>
       <span className="text-[11px] leading-tight text-muted">{hint}</span>
-      <input ref={input} type="file" accept="image/*" capture={capture} hidden onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])} />
-    </button>
+      <div className="flex gap-1.5">
+        <button type="button" className="chip px-2.5 py-1 text-xs" onClick={picker.camera}>📷 Photo</button>
+        <button type="button" className="chip px-2.5 py-1 text-xs" onClick={picker.gallery}>🖼️ Galerie</button>
+      </div>
+      {picker.inputs}
+    </div>
   );
 }
 

@@ -62,6 +62,9 @@ async function generate(params: Omit<GenParams, "model">) {
       console.warn(`${chain[i]} indisponible (${String((e as Error).message).slice(0, 80)})`);
     }
   }
+  const msg = String((last as Error)?.message ?? last);
+  if (/abort|timed? ?out|503|UNAVAILABLE|high demand|429|RESOURCE_EXHAUSTED/i.test(msg))
+    throw new Error("L'IA de Google est saturée en ce moment. Réessaie dans une minute.");
   throw last;
 }
 

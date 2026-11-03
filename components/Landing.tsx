@@ -16,7 +16,11 @@ export default function Landing() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
               <Link href={firebaseEnabled ? "/compte" : "/profil"} className="btn">Créer mon compte — 2 min</Link>
-              {firebaseEnabled && <Link href="/compte" className="btn-ghost">J&apos;ai déjà un compte</Link>}
+              {firebaseEnabled ? (
+                <Link href="/compte" className="btn-ghost">J&apos;ai déjà un compte</Link>
+              ) : (
+                <Link href="/dressing" className="btn-ghost">Commencer par mon dressing</Link>
+              )}
             </div>
         </div>
         <div className="grid grid-cols-3 gap-3">

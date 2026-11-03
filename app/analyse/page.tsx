@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import ColorWheel from "@/components/ColorWheel";
 import Empty from "@/components/Empty";
 import ItemThumb from "@/components/ItemThumb";
 import MissingCard from "@/components/MissingCard";
 import { compressImage } from "@/lib/image";
+import { usePhotoPicker } from "@/components/usePhotoPicker";
 import { useAudit, useItems, useProfile, wardrobeForAI } from "@/lib/store";
 import { apiFetch } from "@/lib/apiFetch";
 import { CATEGORIES, type ItemColor, type MissingPiece } from "@/lib/types";
@@ -31,7 +32,7 @@ export default function AnalysePage() {
   const [selfie, setSelfie] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const input = useRef<HTMLInputElement>(null);
+  const selfiePicker = usePhotoPicker(async (f) => setSelfie(await compressImage(f[0], 512)), { capture: "user" });
 
 
   async function run() {
@@ -88,9 +89,9 @@ export default function AnalysePage() {
           <p className="text-xs text-muted">Lumière du jour, sans maquillage ni filtre, cheveux visibles. La photo est envoyée à l&apos;IA pour l&apos;analyse puis n&apos;est pas conservée.</p>
         </div>
         {selfie && /* eslint-disable-next-line @next/next/no-img-element */ <img src={selfie} alt="selfie" className="h-14 w-14 rounded-full object-cover" />}
-        <button className="btn-ghost" onClick={() => input.current?.click()}>{selfie ? "Changer" : "Ajouter un selfie"}</button>
-        <input ref={input} type="file" accept="image/*" capture="user" hidden
-          onChange={async (e) => e.target.files?.[0] && setSelfie(await compressImage(e.target.files[0], 512))} />
+        <button className="btn-ghost" onClick={selfiePicker.camera}>🤳 Selfie</button>
+        <button className="btn-ghost" onClick={selfiePicker.gallery}>🖼️ Galerie</button>
+        {selfiePicker.inputs}
         <button className="btn" disabled={loading || items.length === 0} onClick={run}>
           {loading ? "Analyse en cours…" : audit ? "Relancer l'analyse" : "Lancer l'analyse"}
         </button>
