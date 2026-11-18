@@ -26,13 +26,16 @@ const normalize = (id: string, d: Record<string, unknown>): Session =>
 type LocalData = { players: Record<string, Player>; sessions: Record<string, Session> };
 const LS = "volley-local";
 const listeners = new Set<() => void>();
+// Repli en mémoire si le navigateur bloque le stockage (navigation privée…).
+let memory: LocalData | null = null;
 function load(): LocalData {
+  if (memory) return structuredClone(memory);
   try { return JSON.parse(localStorage.getItem(LS) ?? "") as LocalData; } catch { return { players: {}, sessions: {} }; }
 }
 function mutate(fn: (d: LocalData) => void) {
   const d = load();
   fn(d);
-  localStorage.setItem(LS, JSON.stringify(d));
+  try { localStorage.setItem(LS, JSON.stringify(d)); } catch { memory = d; }
   listeners.forEach((l) => l());
 }
 function watch(fn: () => void): Unsub {

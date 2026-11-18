@@ -73,7 +73,7 @@ export default function SeancePage() {
     teams.forEach((t, i) => {
       lines.push(`${["🔵", "🔴", "🟢", "🟡", "🟣", "🩵"][i]} ${TEAM_COLORS[i].name} : ${t.map((m) => m.name).join(", ")}`);
     });
-    await navigator.clipboard.writeText(lines.join("\n"));
+    try { await navigator.clipboard.writeText(lines.join("\n")); } catch { return prompt("Copie ce texte :", lines.join("\n")); }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
