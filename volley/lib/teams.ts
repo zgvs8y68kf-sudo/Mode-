@@ -16,6 +16,7 @@ export function suggestedTeamCount(n: number): number {
 }
 
 export interface TeamStats {
+  /** Niveau moyen sur 10 (converti en note sur 99 pour l'affichage). */
   level: number;
   women: number;
   men: number;
@@ -25,7 +26,7 @@ export interface TeamStats {
 export function teamStats(team: Member[]): TeamStats {
   const ages = team.map((m) => m.age).filter((a): a is number => a !== null);
   return {
-    level: Math.round(mean(team.map((m) => m.level)) * 10) / 10 || 0,
+    level: mean(team.map((m) => m.level)) || 0,
     women: team.filter((m) => m.sex === "F").length,
     men: team.filter((m) => m.sex === "M").length,
     age: ages.length ? Math.round(mean(ages)) : null,

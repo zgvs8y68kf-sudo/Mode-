@@ -7,6 +7,6 @@ import Login from "./Login";
 export default function Gate({ children }: { children: React.ReactNode }) {
   const { enabled, authLoading, user } = useApp();
   if (!enabled) return <>{children}</>;
-  if (authLoading) return <p className="pt-10 text-center text-sm text-muted">Chargement…</p>;
+  if (authLoading) return <p className="display pt-10 text-center text-xl text-dim">Chargement…</p>;
   return user ? <>{children}</> : <Login />;
 }

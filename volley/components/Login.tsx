@@ -33,16 +33,16 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-md space-y-6 pt-4">
-      <div className="text-center">
-        <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-full bg-accent text-3xl">🏐</div>
-        <h1 className="text-3xl">Fini les 15 minutes pour faire les équipes</h1>
-        <p className="mt-2 text-sm text-muted">Un petit questionnaire une fois pour toutes, puis tu indiques juste si tu viens. L'app compose des équipes équilibrées.</p>
+      <div>
+        <span className="kicker">Volley · Équipes</span>
+        <h1 className="mt-1 text-6xl">Fini les 15 minutes<br />pour faire<br /><span className="text-gold">les équipes</span></h1>
+        <p className="mt-3 text-lg text-muted">Tu crées ton joueur une fois, puis tu dis juste si tu viens. L'app compose des équipes équilibrées.</p>
       </div>
-      <div className="card space-y-4">
-        <button className="btn-ghost w-full py-3" disabled={busy} onClick={() => run(() => signInWithPopup(auth(), new GoogleAuthProvider()))}>
-          <span className="font-bold">G</span> Continuer avec Google
+      <div className="panel space-y-4 p-5">
+        <button className="btn-ghost w-full" disabled={busy} onClick={() => run(() => signInWithPopup(auth(), new GoogleAuthProvider()))}>
+          Continuer avec Google
         </button>
-        <div className="flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-line" />ou par e-mail<span className="h-px flex-1 bg-line" /></div>
+        <div className="flex items-center gap-3 text-sm uppercase tracking-widest text-dim"><span className="h-px flex-1 bg-line" />ou par e-mail<span className="h-px flex-1 bg-line" /></div>
         <form className="space-y-3" onSubmit={(e) => {
           e.preventDefault();
           run(() => mode === "signup" ? createUserWithEmailAndPassword(auth(), email, password) : signInWithEmailAndPassword(auth(), email, password));
@@ -51,9 +51,9 @@ export default function Login() {
           <input className="input" type="password" required minLength={6} autoComplete={mode === "signup" ? "new-password" : "current-password"} placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} />
           <button className="btn w-full" disabled={busy}>{busy ? "…" : mode === "signup" ? "Créer mon compte" : "Me connecter"}</button>
         </form>
-        {error && <p className="text-sm text-accent">{error}</p>}
-        {info && <p className="text-sm text-muted">{info}</p>}
-        <div className="flex justify-between text-xs text-muted">
+        {error && <p className="font-semibold text-red">{error}</p>}
+        {info && <p className="text-muted">{info}</p>}
+        <div className="flex justify-between text-base text-muted">
           <button className="underline" onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setError(""); }}>
             {mode === "signup" ? "J'ai déjà un compte" : "Créer un compte"}
           </button>

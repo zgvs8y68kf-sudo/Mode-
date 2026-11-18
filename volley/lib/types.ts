@@ -3,21 +3,24 @@ export type SkillKey = "service" | "reception" | "passe" | "attaque" | "bloc" | 
 export type Poste = "polyvalent" | "passeur" | "attaquant" | "central" | "libero";
 export type Presence = "yes" | "maybe" | "no";
 
-/** Profil rempli une fois via le questionnaire. Les compétences vont de 1 à 4. */
+/** Profil rempli une fois via le questionnaire. Les compétences vont de 1 à 5. */
 export interface Player {
   id: string;
   name: string;
   sex: Sex;
   birthYear: number;
   skills: Record<SkillKey, number>;
-  /** Ancienneté (0 à 3) et cadre de jeu (0 à 3). */
+  /** Ancienneté de 0 (moins d'un an) à 3 (plus de 10 ans). */
   years: number;
-  play: number;
   poste: Poste;
+  /** Profil express : une seule note globale, appliquée à tous les gestes. */
+  express?: boolean;
+  /** Version du barème (2 = notes de 1 à 5). */
+  v?: number;
   updatedAt: number;
 }
 
-/** Personne venue ponctuellement, sans compte : on lui donne juste un niveau global (1 à 4). */
+/** Personne venue ponctuellement, sans compte : on lui donne juste un niveau global (1 à 5). */
 export interface Guest {
   id: string;
   name: string;

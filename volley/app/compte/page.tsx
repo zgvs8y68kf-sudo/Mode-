@@ -10,9 +10,9 @@ export default function ComptePage() {
   const router = useRouter();
   if (!user) return null;
   return (
-    <div className="card mx-auto max-w-md space-y-4 text-center">
+    <div className="panel mx-auto max-w-md space-y-4 p-6 text-center">
       <h1 className="text-3xl">Mon compte</h1>
-      <p className="text-sm text-muted">
+      <p className="text-lg text-muted">
         {me ? <>Salut <b className="text-ink">{me.name}</b> ! </> : null}
         Connecté·e avec <b className="text-ink">{user.email ?? user.displayName}</b>.
       </p>

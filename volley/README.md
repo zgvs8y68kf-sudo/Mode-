@@ -2,13 +2,13 @@
 
 Web app (Next.js + Firebase, déployable sur Vercel) pour ne plus perdre de temps à faire les équipes en début de séance.
 
-1. **Une seule fois** : chaque joueur·se crée son compte et remplit un questionnaire bienveillant de 2 minutes (prénom, sexe, année de naissance, 6 gestes : service, réception, passe, attaque, contre, défense, plus l'ancienneté, le cadre de jeu et le poste préféré). Les réponses décrivent des situations de jeu plutôt qu'une note à s'attribuer.
+1. **Une seule fois** : chaque joueur·se crée son compte et remplit crée sa fiche joueur : prénom, sexe, année de naissance, une note de 1 à 5 sur 6 gestes (service, réception, passe, attaque, contre, défense), l'ancienneté et le poste préféré. Environ 1 minute, ou 20 secondes en **profil express** (une seule note globale). La fiche affiche une note sur 99 façon jeu vidéo, visible seulement par son propriétaire.
 2. **À chaque séance** : on clique « Je viens », « Peut-être » ou « Absent·e ». On peut ajouter un·e invité·e sans compte avec un niveau global.
 3. **Sur place** : « Faire les équipes » compose 2 à 6 équipes équilibrées, visibles par tout le monde en temps réel, et copiables pour le groupe WhatsApp. « Refaire » propose une autre répartition tout aussi équilibrée.
 
 ## Comment les équipes sont équilibrées
 `lib/teams.ts` cherche la répartition qui minimise, par ordre d'importance :
-- l'écart de niveau moyen (niveau sur 10 = 80 % gestes, 20 % expérience, voir `lib/questionnaire.ts`) ;
+- l'écart de niveau moyen (niveau = 85 % gestes, 15 % ancienneté, voir `lib/questionnaire.ts` ; affiché en note de 40 à 99) ;
 - l'écart du nombre de femmes par équipe ;
 - l'absence d'un bon passeur dans une équipe, et l'écart sur chaque geste ;
 - l'écart d'âge moyen (l'âge sert à mélanger les générations, il ne baisse pas le niveau).

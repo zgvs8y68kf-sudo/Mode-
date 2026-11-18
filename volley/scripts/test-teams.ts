@@ -22,7 +22,7 @@ for (const n of [8, 12, 13, 18, 24, 31]) {
   const w = stats.map((s) => s.women);
   assert.ok(Math.max(...w) - Math.min(...w) <= 1, "femmes réparties");
   assert.ok(Math.max(...lv) - Math.min(...lv) <= 0.6, `niveaux proches (${lv})`);
-  console.log(`${n} joueurs / ${k} équipes en ${ms} ms · niveaux ${lv.join(" / ")} · femmes ${w.join(" / ")} · coût ${cost(teams).toFixed(2)}`);
+  console.log(`${n} joueurs / ${k} équipes en ${ms} ms · niveaux ${lv.map((x) => x.toFixed(2)).join(" / ")} · femmes ${w.join(" / ")} · coût ${cost(teams).toFixed(2)}`);
 }
 console.log("OK");
 

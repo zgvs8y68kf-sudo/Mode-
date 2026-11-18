@@ -11,9 +11,9 @@ export function demoPlayers(n: number, rnd: () => number = Math.random): Player[
   for (let i = 0; i < n; i++) {
     const female = i % 5 < 2;
     const pool = female ? NAMES_F : NAMES_M;
-    const base = 1 + Math.floor(rnd() * 4);
+    const base = 1 + Math.floor(rnd() * 5);
     const skills = Object.fromEntries(
-      SKILLS.map((k) => [k, Math.min(4, Math.max(1, base + Math.round(rnd() * 2 - 1)))]),
+      SKILLS.map((k) => [k, Math.min(5, Math.max(1, base + Math.round(rnd() * 2 - 1)))]),
     ) as Record<SkillKey, number>;
     players.push({
       id: `demo-${i}`,
@@ -21,9 +21,9 @@ export function demoPlayers(n: number, rnd: () => number = Math.random): Player[
       sex: female ? "F" : "M",
       birthYear: 1970 + Math.floor(rnd() * 37),
       skills,
-      years: Math.min(3, Math.max(0, base - 1 + Math.round(rnd() - 0.5))),
-      play: Math.min(3, Math.max(0, base - 1)),
+      years: Math.min(3, Math.max(0, base - 2 + Math.round(rnd() - 0.5))),
       poste: POSTES[Math.floor(rnd() * POSTES.length)],
+      v: 2,
       updatedAt: Date.now(),
     });
   }

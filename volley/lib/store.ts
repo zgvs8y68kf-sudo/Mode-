@@ -5,6 +5,7 @@ import {
 } from "firebase/firestore";
 import { db, firebaseEnabled } from "./firebase";
 import { demoPlayers } from "./demo";
+import { normalizePlayer } from "./questionnaire";
 import type { Guest, Player, Presence, Session, Teams } from "./types";
 
 type Unsub = () => void;
@@ -60,10 +61,11 @@ export function resetLocal() { mutate((d) => { d.players = {}; d.sessions = {}; 
 /* ---------- API commune ---------- */
 
 export function subscribePlayers(cb: (p: Record<string, Player>) => void): Unsub {
-  if (!firebaseEnabled) return watch(() => cb(load().players));
+  if (!firebaseEnabled)
+    return watch(() => cb(Object.fromEntries(Object.entries(load().players).map(([id, p]) => [id, normalizePlayer(p)]))));
   return onSnapshot(collection(db(), "players"), (snap) => {
     const r: Record<string, Player> = {};
-    snap.forEach((d) => { r[d.id] = { ...(d.data() as Player), id: d.id }; });
+    snap.forEach((d) => { r[d.id] = normalizePlayer({ ...(d.data() as Player), id: d.id }); });
     cb(r);
   }, (e) => console.error("players", e));
 }
