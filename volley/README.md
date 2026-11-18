@@ -2,7 +2,7 @@
 
 Web app (Next.js + Firebase, déployable sur Vercel) pour ne plus perdre de temps à faire les équipes en début de séance.
 
-1. **Une seule fois** : chaque joueur·se crée son compte et remplit crée sa fiche joueur : prénom, sexe, année de naissance, une note de 1 à 5 sur 6 gestes (service, réception, passe, attaque, contre, défense), l'ancienneté et le poste préféré. Environ 1 minute, ou 20 secondes en **profil express** (une seule note globale). La fiche affiche une note sur 99 façon jeu vidéo, visible seulement par son propriétaire.
+1. **Une seule fois** : chaque joueur·se crée son compte et sa fiche joueur : prénom, sexe, année de naissance, une note de 1 à 5 sur 6 gestes (service, réception, passe, attaque, contre, défense), l'ancienneté et le poste préféré. Environ 1 minute, ou 20 secondes en **profil express** (une seule note globale). La fiche affiche une note sur 99 façon jeu vidéo, visible seulement par son propriétaire.
 2. **À chaque séance** : on clique « Je viens », « Peut-être » ou « Absent·e ». On peut ajouter un·e invité·e sans compte avec un niveau global.
 3. **Sur place** : « Faire les équipes » compose 2 à 6 équipes équilibrées, visibles par tout le monde en temps réel, et copiables pour le groupe WhatsApp. « Refaire » propose une autre répartition tout aussi équilibrée.
 
