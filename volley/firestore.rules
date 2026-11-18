@@ -1,0 +1,30 @@
+rules_version = '2';
+// Club entre ami·e·s : toute personne connectée voit les profils et les séances.
+// Chacun·e ne modifie que son propre profil ; une séance n'est supprimée que par celui ou celle qui l'a créée.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+
+    match /players/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40;
+    }
+
+    match /sessions/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      // Présences, invités et équipes peuvent être modifiés par tout le monde ;
+      // date, heure et lieu seulement par la personne qui a créé la séance.
+      allow update: if signedIn() && (
+        resource.data.createdBy == request.auth.uid
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['presence', 'guests', 'teams'])
+      );
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
